@@ -81,6 +81,36 @@ def pusher_rk4(dt: float, r: list, v: list, u: list, B: list, E: list):
     return r, v, u
 
 
+def main_test_1_5(dt_step: float, r1: list, r2: list, u1: list, u2: list, B: list, E: list):
+    """
+    Main part of tests from Table 1
+    """
+    graph1, graph2 = [], []  # graphs points
+
+    for t in np.arange(0, 12 * np.pi, dt_step):
+        u1_prev = u1[0]
+        u2_prev = u2[0]
+        r1, u1 = pusher_boris_c(dt_step, r1, u1, B, E)
+        r2, u2 = pusher_boris_b(dt_step, r2, u2, B, E)
+        u1_next = u1[0]
+        u2_next = u2[0]
+        du1 = np.abs(u1_next - u1_prev)
+        du2 = np.abs(u2_next - u2_prev)
+        du1u1t = [du1 / np.abs(u1[0]), t, 0]
+        du2u2t = [du2 / np.abs(u2[0]), t, 0]
+
+        graph1.append(du1u1t.copy())
+        graph2.append(du2u2t.copy())
+
+    plot_2d_graph([graph1, graph2],
+                  colors=['red', 'green'],
+                  names=['Метод Бориса C', 'Метод Бориса B'],
+                  directions=['xy'],
+                  with_markers=True)
+
+    pass
+
+
 def test_1():
     """
      Table 1, test 1: B = (0,0,0) E = (1,0,0) - direct acceleration by E
@@ -95,28 +125,7 @@ def test_1():
     u1 = [1.0, 0.0, 0.0]  # particle velocities for pusher 1
     u2 = [1.0, 0.0, 0.0]  # particle velocities for pusher 2
 
-    graph1, graph2 = [], []  # graphs points
-
-    for t in np.arange(0, 12 * np.pi, dt_step):
-        u1_prev = u1[0]
-        u2_prev = u2[0]
-        r1, u1 = pusher_boris_c(dt_step, r1, u1, B, E)
-        r2, u2 = pusher_boris_b(dt_step, r2, u2, B, E)
-        u1_next = u1[0]
-        u2_next = u2[0]
-        du1 = np.abs(u1_next - u1_prev)
-        du2 = np.abs(u2_next - u2_prev)
-        du1u1t = [du1, t, 0]
-        du2u2t = [du2, t, 0]
-
-        graph1.append(du1u1t.copy())
-        graph2.append(du2u2t.copy())
-
-    plot_2d_graph([graph1, graph2],
-                  colors=['red', 'green', 'blue'],
-                  names=['Метод Бориса C', 'Метод Бориса B'],
-                  directions=['xy'],
-                  with_markers=True)
+    main_test_1_5(dt_step, r1, r2, u1, u2, B, E)
 
     pass
 
@@ -125,6 +134,18 @@ def test_2():
     """
      Table 1, test 2: B = (0,0,0.1) E = (1,0,0) - E-dominated
     """
+    dt_step = np.pi / 6
+
+    B = [0.0, 0.0, 0.1]
+    E = [1.0, 0.0, 0.0]
+
+    r1 = [0.0, 0.0, 0.0]  # particle positions for pusher 1
+    r2 = [0.0, 0.0, 0.0]  # particle positions for pusher 2
+    u1 = [1.0, 0.0, 0.0]  # particle velocities for pusher 1
+    u2 = [1.0, 0.0, 0.0]  # particle velocities for pusher 2
+
+    main_test_1_5(dt_step, r1, r2, u1, u2, B, E)
+
     pass
 
 
@@ -132,6 +153,18 @@ def test_3():
     """
      Table 1, test 3: B = (0,0,1) E = (1,0,0) - |E| = |B|
     """
+    dt_step = np.pi / 6
+
+    B = [0.0, 0.0, 1.0]
+    E = [1.0, 0.0, 0.0]
+
+    r1 = [0.0, 0.0, 0.0]  # particle positions for pusher 1
+    r2 = [0.0, 0.0, 0.0]  # particle positions for pusher 2
+    u1 = [1.0, 0.0, 0.0]  # particle velocities for pusher 1
+    u2 = [1.0, 0.0, 0.0]  # particle velocities for pusher 2
+
+    main_test_1_5(dt_step, r1, r2, u1, u2, B, E)
+
     pass
 
 
@@ -139,6 +172,18 @@ def test_4():
     """
      Table 1, test 4: B = (0,0,1) E = (0.1,0,0) - E×B drift
     """
+    dt_step = np.pi / 6
+
+    B = [0.0, 0.0, 1.0]
+    E = [0.1, 0.0, 0.0]
+
+    r1 = [0.0, 0.0, 0.0]  # particle positions for pusher 1
+    r2 = [0.0, 0.0, 0.0]  # particle positions for pusher 2
+    u1 = [1.0, 0.0, 0.0]  # particle velocities for pusher 1
+    u2 = [1.0, 0.0, 0.0]  # particle velocities for pusher 2
+
+    main_test_1_5(dt_step, r1, r2, u1, u2, B, E)
+
     pass
 
 
@@ -146,6 +191,18 @@ def test_5():
     """
      Table 1, test 5: B = (0,0,1) E = (0,0,0) - gyration about B
     """
+    dt_step = np.pi / 6
+
+    B = [0.0, 0.0, 1.0]
+    E = [0.0, 0.0, 0.0]
+
+    r1 = [0.0, 0.0, 0.0]  # particle positions for pusher 1
+    r2 = [0.0, 0.0, 0.0]  # particle positions for pusher 2
+    u1 = [1.0, 0.0, 0.0]  # particle velocities for pusher 1
+    u2 = [1.0, 0.0, 0.0]  # particle velocities for pusher 2
+
+    main_test_1_5(dt_step, r1, r2, u1, u2, B, E)
+
     pass
 
 
@@ -165,3 +222,7 @@ def test_7():
 
 if __name__ == '__main__':
     test_1()
+    test_2()
+    test_3()
+    test_4()
+    test_5()
