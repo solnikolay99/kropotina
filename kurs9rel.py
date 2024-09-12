@@ -2,11 +2,16 @@ from plotter import *
 
 B0 = 1e-6  # Gs, magnetic field
 E0 = 0.0  # Gs
-v0 = 3e8  # cm/s
-q = 4.8e-10  # CGS units, electric charge of proton/electron
-m = 1.67e-24  # g, proton mass
+# q = 4.8e-10  # CGS units, electric charge of proton/electron
+# m = 1.67e-24  # g, proton mass
+# c = 3.0e10  # velocity of light
+q = 1  # CGS units, electric charge of proton/electron
+m = 1  # g, proton mass
+c = 1  # velocity of light
 qm = q / m
-c = 3.0e10  # velocity of light
+qm2 = q / (2 * m)
+qm2c = q / (2 * m * c)
+c2 = c * c
 B_qmc = []  # qm * B / c
 
 
@@ -14,32 +19,28 @@ def F(E_v: float, v1_v: float, v2_v: float, B1: float, B2: float):
     return E_v + v1_v * B1 - v2_v * B2
 
 
-def pusher_boris_c(dt: float, r: list, v: list, u: list, B: list, E: list):
+def pusher_boris_c(dt: float, r: list, u: list, B: list, E: list):
+    """
+    Boris-C method
+    """
+    return r, u
+
+
+def pusher_boris_b(dt: float, r: list, u: list, B: list, E: list):
     """
     Boris-B method
     """
-    return r, v, u
+    u_minus = [u[i] + qm2 * E[i] * dt for i in range(3)]
+    gamma = np.sqrt(1 + np.dot(u_minus, u_minus) / c2)
+    t_v = [qm2c * dt * B[i] / gamma for i in range(3)]
+    s = [2 * t_v[i] / (1 + np.dot(t_v, t_v)) for i in range(3)]
+    u_prime = u_minus + np.cross(u_minus, t_v)
+    u_plus = u_minus + np.cross(u_prime, s)
+    u = [u_plus[i] + qm2 * E[i] * dt for i in range(3)]
 
+    r = [r[i] + u[i] * dt / gamma for i in range(3)]
 
-def pusher_boris_b(dt: float, r: list, v: list, u: list, B: list, E: list):
-    """
-    Boris-B method
-    """
-    v1_l = [v[i] + qm * E[i] * dt / 2 for i in range(3)]
-    a1 = [q * dt / (2 * m * c) for _ in range(3)]
-    a2 = [2 * a1[i] / (1 + a1[i] * a1[i] * np.dot(B, B)) for i in range(3)]
-
-    v3_l = np.cross(v1_l, B)
-    v3_l = v1_l + a1 * v3_l
-
-    v2_l = np.cross(v3_l, B)
-    v2_l = v1_l + a2 * v2_l
-
-    v = [v2_l[i] + qm * E[i] * dt / 2 for i in range(3)]
-
-    r = [r[i] + v[i] * dt for i in range(3)]
-
-    return r, v, u
+    return r, u
 
 
 def pusher_rk4(dt: float, r: list, v: list, u: list, B: list, E: list):
@@ -85,27 +86,31 @@ def test_1():
      Table 1, test 1: B = (0,0,0) E = (1,0,0) - direct acceleration by E
     """
     dt_step = np.pi / 6
-    beta0 = 0.9  # velocity in units
-    gamma0 = 1.0 / np.sqrt(1.0 - beta0 * beta0)
 
     B = [0.0, 0.0, 0.0]
     E = [1.0, 0.0, 0.0]
 
     r1 = [0.0, 0.0, 0.0]  # particle positions for pusher 1
     r2 = [0.0, 0.0, 0.0]  # particle positions for pusher 2
-    v1 = [v0, 0.0, 0.0]  # particle velocities for pusher 1
-    v2 = [v0, 0.0, 0.0]  # particle velocities for pusher 2
-    u1 = [v0 * gamma0, 0.0, 0.0]  # particle velocities for pusher 1
-    u2 = [v0 * gamma0, 0.0, 0.0]  # particle velocities for pusher 2
+    u1 = [1.0, 0.0, 0.0]  # particle velocities for pusher 1
+    u2 = [1.0, 0.0, 0.0]  # particle velocities for pusher 2
 
     graph1, graph2 = [], []  # graphs points
 
-    for _ in np.arange(0, 12 / np.pi, dt_step):
-        r1, v1, u1 = pusher_boris_c(dt_step, r1, v1, u1, B, E)
-        r2, v2, u2 = pusher_boris_b(dt_step, r2, v2, u2, B, E)
+    for t in np.arange(0, 12 * np.pi, dt_step):
+        u1_prev = u1[0]
+        u2_prev = u2[0]
+        r1, u1 = pusher_boris_c(dt_step, r1, u1, B, E)
+        r2, u2 = pusher_boris_b(dt_step, r2, u2, B, E)
+        u1_next = u1[0]
+        u2_next = u2[0]
+        du1 = np.abs(u1_next - u1_prev)
+        du2 = np.abs(u2_next - u2_prev)
+        du1u1t = [du1, t, 0]
+        du2u2t = [du2, t, 0]
 
-        graph1.append(r1.copy())
-        graph2.append(r2.copy())
+        graph1.append(du1u1t.copy())
+        graph2.append(du2u2t.copy())
 
     plot_2d_graph([graph1, graph2],
                   colors=['red', 'green', 'blue'],
