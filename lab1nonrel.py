@@ -137,7 +137,7 @@ if __name__ == '__main__':
     v5 = [v0, 0.0, 0.0]  # particle velocities for pusher 5
     graph1, graph2, graph3, graph5 = [], [], [], []  # graphs points
 
-    fileName = "Compare_particle_movers_dt_{}.dat".format(dt_step)
+    fileName = "temp/Compare_particle_movers_dt_{}.dat".format(dt_step)
 
     out_tmpl = lambda r_l, v_l: "{:.4f} {:.4f} {:.4f} {:.4f} {:.4f} {:.4f} " \
         .format(r_l[0], r_l[1], r_l[2], v_l[0], v_l[1], v_l[2])
