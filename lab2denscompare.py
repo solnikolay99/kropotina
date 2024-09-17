@@ -1,7 +1,7 @@
 import os
 import random
 
-max_length = 20  # max x coord
+max_length = 1  # max x coord
 count_el = 100  # count points
 
 
@@ -47,7 +47,7 @@ class Tree:
                     self.rel_right.put_particle(self.cur_cell.x, self.cur_cell.M)
                 self.cur_cell.x = 0.0
                 self.cur_cell.p_cic = 0.0
-                self.cur_cell.p_cic_overlap = 0.0
+                self.cur_cell.p_cic_overlap = 1.0
             # place new point in one of the cells
             if x < self.cur_cell.x_c:
                 self.rel_left.put_particle(x, m)
@@ -59,10 +59,7 @@ class Tree:
 
     def get_particles(self) -> list[Cell]:
         if self.rel_left is None:
-            if self.cur_cell.M > 0:
-                return [self.cur_cell]
-            else:
-                return []
+            return [self.cur_cell]
         else:
             return self.rel_left.get_particles() + self.rel_right.get_particles()
         pass
@@ -139,13 +136,13 @@ def dump_to_file(tree_for_dump: Tree, tabular='', position='centre'):
 if __name__ == '__main__':
     tree = Tree(max_length)
 
+    '''
     for _ in range(count_el):
         x_coord = random.random() * max_length
         tree.put_particle(x_coord, 1)
     '''
     for x_coord in [0.7, 0.27, 0.3]:
         tree.put_particle(x_coord, 1)
-    '''
 
     density_ngp = calc_dens_ngp(tree)
     density_cic = calc_dens_cic(tree, max_length)
