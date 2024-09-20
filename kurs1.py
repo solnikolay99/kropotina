@@ -156,11 +156,13 @@ class Tree:
         pass
 
 
-def gravity(point1: list[float], point2: list[float]) -> Vector:
+def gravity(point1: list[float], point2: list[float], m1: float, m2: float) -> Vector:
     """
     Calculate the force of gravity
     :param point1: point 1
     :param point2: point 2
+    :param m1: mass of point 1
+    :param m2: mass of point 2
     :return: the force of gravity
     """
     r2 = (point1[0] - point2[0]) * (point1[0] - point2[0]) + \
@@ -168,7 +170,7 @@ def gravity(point1: list[float], point2: list[float]) -> Vector:
          (point1[2] - point2[2]) * (point1[2] - point2[2])
     if r2 == 0:
         return Vector(0.0, 0.0, 0.0)
-    r3_inv = 1.0 / (r2 * np.sqrt(r2))
+    r3_inv = m1 * m2 / (r2 * np.sqrt(r2))
 
     f_gr = Vector(-G * (point1[0] - point2[0]) * r3_inv,
                   -G * (point1[1] - point2[1]) * r3_inv,
@@ -187,7 +189,8 @@ def calculate_by_direct_sum(points: list[PointDS], point: list[float]):
             continue
         for j in range(i + 1, len(points)):
             points[i].f_gr += gravity([points[i].x, points[i].y, points[i].z],
-                                      [points[j].x, points[j].y, points[j].z])
+                                      [points[j].x, points[j].y, points[j].z],
+                                      points[i].m, points[j].m)
     pass
 
 
@@ -233,7 +236,8 @@ def calculate_by_tree(tree: Tree, point: list[float], lr: float) -> Vector:
         # include whole cell mass
         return gravity(point, [tree.cur_cell.mass_c.x,
                                tree.cur_cell.mass_c.y,
-                               tree.cur_cell.mass_c.z])
+                               tree.cur_cell.mass_c.z],
+                       point[3], tree.cur_cell.M)
     else:
         # step in and resolve refs
         f_gr = Vector(0.0, 0.0, 0.0)
@@ -249,7 +253,8 @@ def calculate_by_tree(tree: Tree, point: list[float], lr: float) -> Vector:
         else:
             f_gr = gravity(point, [tree.cur_cell.mass_c.x,
                                    tree.cur_cell.mass_c.y,
-                                   tree.cur_cell.mass_c.z])
+                                   tree.cur_cell.mass_c.z],
+                           point[3], tree.cur_cell.M)
         return f_gr
     pass
 
@@ -276,7 +281,7 @@ if __name__ == '__main__':
                                            c * max_size / 31,
                                            1))
 
-    desired_point = [0.0, 0.0, 0.0]
+    desired_point = [0.0, 0.0, 0.0, 1.0]  # x, y, z coords and m of desired point
 
     start_time = time.time()
     calculate_by_direct_sum(main_points, desired_point)
@@ -284,7 +289,7 @@ if __name__ == '__main__':
 
     start_time = time.time()
     main_tree = convert_to_tree(main_points)
-    print(f"Execution time of converting points to tree is {time.time() - start_time:.4f} seconds")
+    print(f"Execution time of converting to tree is {time.time() - start_time:.4f} seconds")
 
     start_time = time.time()
     f_gravity = calculate_by_tree(main_tree, desired_point, 0.5)
