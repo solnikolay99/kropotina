@@ -271,6 +271,15 @@ def print_tree_result(point: list[float], f_gr: Vector):
     pass
 
 
+def print_compare_gravity(point_by_ds: PointDS, f_gr_by_tree: Vector):
+    accuracy_x = np.abs(1 - point_by_ds.f_gr.x / f_gr_by_tree.x) * 100
+    accuracy_y = np.abs(1 - point_by_ds.f_gr.y / f_gr_by_tree.y) * 100
+    accuracy_z = np.abs(1 - point_by_ds.f_gr.z / f_gr_by_tree.z) * 100
+    print(f"Accuracy between Direct sum and Tree methods is"
+          f" [{accuracy_x:.2f}%, {accuracy_y:.2f}%, {accuracy_z:.2f}%]")
+    pass
+
+
 if __name__ == '__main__':
     main_points = []
     for a in range(32):
@@ -297,5 +306,6 @@ if __name__ == '__main__':
 
     print_ds_result(main_points[0])
     print_tree_result(desired_point, f_gravity)
+    print_compare_gravity(main_points[0], f_gravity)
 
     pass
