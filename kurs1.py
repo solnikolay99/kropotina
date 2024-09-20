@@ -1,4 +1,3 @@
-import os
 import time
 
 import numpy as np
@@ -74,6 +73,9 @@ class Tree:
         pass
 
     def _split_cur_cell(self):
+        """
+        Split current cell to 8 sub-cells
+        """
         self.rel_xl_yl_zl = Tree(self.cur_cell.size * 0.5,
                                  [-self.cur_cell.center.x, -self.cur_cell.center.y, -self.cur_cell.center.z],
                                  self.cur_cell)
@@ -101,6 +103,11 @@ class Tree:
         pass
 
     def _put_particle(self, coords: list[float], m: float):
+        """
+        Move particle to 1 of 8 sub-cells
+        :param coords: coords of particle
+        :param m: mass of particle
+        """
         x_l_r = 0 if coords[0] < self.cur_cell.center.x else 1
         y_l_r = 0 if coords[1] < self.cur_cell.center.y else 1
         z_l_r = 0 if coords[2] < self.cur_cell.center.z else 1
@@ -123,6 +130,11 @@ class Tree:
         pass
 
     def put_particle(self, coords: list[float], m: float):
+        """
+        Put particle to the cell of tree structure
+        :param coords: coords of particle
+        :param m: mass of particle
+        """
         if self.cur_cell.M == 0.0 and self.rel_xl_yl_zl is None:
             self.cur_cell.point = Point(coords[0], coords[1], coords[2])
             self.cur_cell.mass_c = Point(coords[0], coords[1], coords[2])
@@ -143,38 +155,14 @@ class Tree:
         self.cur_cell.M += m
         pass
 
-    def find_cell_by_point(self, coords: list[float]):
-        if self.rel_xl_yl_zl is None:
-            if self.cur_cell.point.x == coords[0] and \
-                    self.cur_cell.point.y == coords[1] and \
-                    self.cur_cell.point.z == coords[2]:
-                return self
-            else:
-                raise Exception('Cell not found')
-        else:
-            x_l_r = 0 if coords[0] < self.cur_cell.center.x else 1
-            y_l_r = 0 if coords[1] < self.cur_cell.center.y else 1
-            z_l_r = 0 if coords[2] < self.cur_cell.center.z else 1
-            if x_l_r == 0 and y_l_r == 0 and z_l_r == 0:
-                return self.rel_xl_yl_zl.find_cell_by_point(coords)
-            elif x_l_r == 1 and y_l_r == 0 and z_l_r == 0:
-                return self.rel_xr_yl_zl.find_cell_by_point(coords)
-            elif x_l_r == 0 and y_l_r == 1 and z_l_r == 0:
-                return self.rel_xl_yr_zl.find_cell_by_point(coords)
-            elif x_l_r == 1 and y_l_r == 1 and z_l_r == 0:
-                return self.rel_xr_yr_zl.find_cell_by_point(coords)
-            elif x_l_r == 0 and y_l_r == 0 and z_l_r == 1:
-                return self.rel_xl_yl_zr.find_cell_by_point(coords)
-            elif x_l_r == 1 and y_l_r == 0 and z_l_r == 1:
-                return self.rel_xr_yl_zr.find_cell_by_point(coords)
-            elif x_l_r == 0 and y_l_r == 1 and z_l_r == 1:
-                return self.rel_xl_yr_zr.find_cell_by_point(coords)
-            elif x_l_r == 1 and y_l_r == 1 and z_l_r == 1:
-                return self.rel_xr_yr_zr.find_cell_by_point(coords)
-        pass
-
 
 def gravity(point1: list[float], point2: list[float]) -> Vector:
+    """
+    Calculate the force of gravity
+    :param point1: point 1
+    :param point2: point 2
+    :return: the force of gravity
+    """
     r2 = (point1[0] - point2[0]) * (point1[0] - point2[0]) + \
          (point1[1] - point2[1]) * (point1[1] - point2[1]) + \
          (point1[2] - point2[2]) * (point1[2] - point2[2])
@@ -189,6 +177,11 @@ def gravity(point1: list[float], point2: list[float]) -> Vector:
 
 
 def calculate_by_direct_sum(points: list[PointDS], point: list[float]):
+    """
+    Calculate the force of gravity by Direct sum method
+    :param points: list of all points in the system
+    :param point: desired point
+    """
     for i in range(len(points)):
         if points[i].x != point[0] or points[i].y != point[1] or points[i].z != point[2]:
             continue
@@ -198,45 +191,12 @@ def calculate_by_direct_sum(points: list[PointDS], point: list[float]):
     pass
 
 
-def dump_cell(cell: Cell, tabular='', cell_position='centre') -> str:
-    formated_str = f"| size={cell.size:.4f} center=[{cell.center.x:.4f}, {cell.center.y:.4f}, {cell.center.z:.4f}]" \
-                   f" m={cell.M:.4f}"
-    if cell.point is not None:
-        formated_str += f" point=[{cell.point.x:.4f}, {cell.point.y:.4f}, {cell.point.z:.4f}]"
-    if cell.mass_c is not None:
-        formated_str += f" mass_c=[{cell.mass_c.x:.4f}, {cell.mass_c.y:.4f}, {cell.mass_c.z:.4f}]"
-    formated_str += " |"
-    top_row = f"-----{cell_position}"
-    top_row = top_row + "-" * (len(formated_str) - len(top_row))
-    bottom_row = "-" * len(formated_str)
-    return f"{tabular}{top_row}\n" \
-           f"{tabular}{formated_str}\n" \
-           f"{tabular}{bottom_row}\n"
-
-
-def dump_to_file(output_f, tree_for_dump: Tree, tabular='', position='centre'):
-    output_f.write(dump_cell(tree_for_dump.cur_cell, tabular, position))
-    tabular += '    '
-    if tree_for_dump.rel_xl_yl_zl is not None:
-        dump_to_file(output_f, tree_for_dump.rel_xl_yl_zl, tabular, ' left left left ')
-    if tree_for_dump.rel_xr_yl_zl is not None:
-        dump_to_file(output_f, tree_for_dump.rel_xr_yl_zl, tabular, ' right left left')
-    if tree_for_dump.rel_xl_yr_zl is not None:
-        dump_to_file(output_f, tree_for_dump.rel_xl_yr_zl, tabular, ' left right left ')
-    if tree_for_dump.rel_xr_yr_zl is not None:
-        dump_to_file(output_f, tree_for_dump.rel_xr_yr_zl, tabular, ' right right left')
-    if tree_for_dump.rel_xl_yl_zr is not None:
-        dump_to_file(output_f, tree_for_dump.rel_xl_yl_zr, tabular, ' left left right ')
-    if tree_for_dump.rel_xr_yl_zr is not None:
-        dump_to_file(output_f, tree_for_dump.rel_xr_yl_zr, tabular, ' right left right')
-    if tree_for_dump.rel_xl_yr_zr is not None:
-        dump_to_file(output_f, tree_for_dump.rel_xl_yr_zr, tabular, ' left right right ')
-    if tree_for_dump.rel_xr_yr_zr is not None:
-        dump_to_file(output_f, tree_for_dump.rel_xr_yr_zr, tabular, ' right right right')
-    pass
-
-
 def convert_to_tree(points: list[PointDS]) -> Tree:
+    """
+    Convert list of whole points to Tree by tree method
+    :param points: list of all points in the system
+    :return: tree
+    """
     tree = Tree(1.0)
     for i in range(len(points)):
         tree.put_particle([points[i].x, points[i].y, points[i].z], points[i].m)
@@ -244,6 +204,13 @@ def convert_to_tree(points: list[PointDS]) -> Tree:
 
 
 def check_lr(cell: Cell, point: list[float], lr: float) -> bool:
+    """
+    Calculate the criteria for opening a node
+    :param cell: cell from tree structure
+    :param point: desired point
+    :param lr: criteria for opening a node
+    :return: True if calculated value < lr, False - otherwise
+    """
     L = cell.size
     D = np.sqrt((cell.mass_c.x - point[0]) * (cell.mass_c.x - point[0])
                 + (cell.mass_c.y - point[1]) * (cell.mass_c.y - point[1])
@@ -254,7 +221,14 @@ def check_lr(cell: Cell, point: list[float], lr: float) -> bool:
     return LD < lr
 
 
-def calculate_by_tree(tree: Tree, point: list[float], lr: float):
+def calculate_by_tree(tree: Tree, point: list[float], lr: float) -> Vector:
+    """
+    Calculate the force of gravity by Tree method
+    :param tree: tree with all points in the system
+    :param point: desired point
+    :param lr: criteria for opening a tree node
+    :return: the force of gravity
+    """
     if check_lr(tree.cur_cell, point, lr):
         # include whole cell mass
         return gravity(point, [tree.cur_cell.mass_c.x,
@@ -287,7 +261,7 @@ def print_ds_result(point: PointDS):
 
 
 def print_tree_result(point: list[float], f_gr: Vector):
-    print(f"Fgr by Direct sum method for point [{point[0]}, {point[1]}, {point[2]}]"
+    print(f"Fgr by Tree method for point [{point[0]}, {point[1]}, {point[2]}]"
           f" is [{f_gr.x}, {f_gr.y}, {f_gr.z}]")
     pass
 
@@ -308,15 +282,13 @@ if __name__ == '__main__':
     calculate_by_direct_sum(main_points, desired_point)
     print(f"Execution time of Direct sum method is {time.time() - start_time:.4f} seconds")
 
+    start_time = time.time()
     main_tree = convert_to_tree(main_points)
+    print(f"Execution time of converting points to tree is {time.time() - start_time:.4f} seconds")
 
     start_time = time.time()
     f_gravity = calculate_by_tree(main_tree, desired_point, 0.5)
     print(f"Execution time of Tree method is {time.time() - start_time:.4f} seconds")
-
-    os.makedirs("temp", exist_ok=True)
-    with open('temp/Tree_dump.txt', 'w') as output:
-        dump_to_file(output, main_tree)
 
     print_ds_result(main_points[0])
     print_tree_result(desired_point, f_gravity)
