@@ -5,7 +5,7 @@ class Cell:
     size = 0  # size
     x_c = 0.0  # coordinate of centre
     x_m = 0.0  # coordinate of mass center
-    x = 0.0
+    x = 0.0  # x-coord of point
     M = 0.0  # summary mass
 
     def __init__(self, size: float, s_c_shift=0.0):
@@ -24,18 +24,29 @@ class Tree:
         pass
 
     def put_particle(self, x: float, m: float):
-        if self.cur_cell.M == 0:
+        if self.cur_cell.M == 0 and self.rel_left is None and self.rel_right is None:
             self.cur_cell.x = x
-        elif x < self.cur_cell.x_c:
+            self.cur_cell.p_cic_overlap = 1 - abs(self.cur_cell.x - self.cur_cell.x_c) / self.cur_cell.size
+            self.cur_cell.p_cic = self.cur_cell.p_cic_overlap * m / self.cur_cell.size
+        else:
+            # split current cell to 2 cells and move curr point in one of the new cells
             if self.rel_left is None:
                 self.rel_left = Tree(self.cur_cell.size * 0.5, -self.cur_cell.x_c)
-            self.rel_left.put_particle(x, m)
-        else:
-            if self.rel_right is None:
                 self.rel_right = Tree(self.cur_cell.size * 0.5, self.cur_cell.x_c)
-            self.rel_right.put_particle(x, m)
-        self.cur_cell.x_m = (self.cur_cell.x_m * self.cur_cell.M + x * m) / (self.cur_cell.M + m)
+                if self.cur_cell.x < self.cur_cell.x_c:
+                    self.rel_left.put_particle(self.cur_cell.x, self.cur_cell.M)
+                else:
+                    self.rel_right.put_particle(self.cur_cell.x, self.cur_cell.M)
+                self.cur_cell.x = 0.0
+                self.cur_cell.p_cic = 0.0
+                self.cur_cell.p_cic_overlap = 1.0
+            # place new point in one of the cells
+            if x < self.cur_cell.x_c:
+                self.rel_left.put_particle(x, m)
+            else:
+                self.rel_right.put_particle(x, m)
         self.cur_cell.M += m
+        self.cur_cell.p_ngp = self.cur_cell.M / self.cur_cell.size
         pass
 
 
